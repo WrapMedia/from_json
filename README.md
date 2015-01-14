@@ -1,6 +1,6 @@
-# FromJsonEx
+# JsonForm
 
-TODO: Write a gem description
+Gem for creating Json forms.
 
 ## Installation
 
@@ -20,4 +20,15 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+Each form is a separate class. You will have to inherit your forms from JsonForm::Form, example:
+
+```ruby
+class MyModelForm < JsonForm::Form
+  attributes :name, :size
+
+  embeds_many :children, ChildForm
+  embeds_one :parent do
+    attributes :length
+  end
+end
+```
