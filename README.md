@@ -7,7 +7,7 @@ Gem for creating Json forms.
 Add this line to your application's Gemfile:
 
 ```ruby
-gem 'from_json'
+gem 'json_form'
 ```
 
 And then execute:
@@ -16,7 +16,7 @@ And then execute:
 
 Or install it yourself as:
 
-    $ gem install from_json
+    $ gem install json_form
 
 ## Usage
 
