@@ -42,7 +42,7 @@ describe JsonForm::Form do
     end
   end
 
-  describe "embeds_one" do
+  describe ".embeds_one" do
     build :employee_form_class, :task_form_class
 
     it "adds association" do
@@ -184,7 +184,7 @@ describe JsonForm::Form do
     end
   end
 
-  describe "update_attributes" do
+  describe "#update_attributes" do
     before do
       build :leader_form
       employee_form_class.class_eval do
