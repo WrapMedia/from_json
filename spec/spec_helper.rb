@@ -2,6 +2,7 @@ require 'rspec'
 require 'blueprints_boy'
 require 'json_form'
 require_relative 'support/models'
+require_relative 'support/save_examples'
 
 RSpec.configure do |config|
   # rspec-expectations config goes here. You can use an alternate

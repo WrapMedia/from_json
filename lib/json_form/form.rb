@@ -1,6 +1,4 @@
 class JsonForm::Form
-  delegate :save, :save!, to: :@model
-
   class_attribute :assigned_attributes
   self.assigned_attributes = []
 
@@ -39,8 +37,26 @@ class JsonForm::Form
     end
   end
 
+  def save(options = {})
+    @model.save(options)
+  end
+
+  def save!
+    @model.save or raise_record_invalid!
+  end
+
   def update_attributes(data)
     self.attributes = data
     save
+  end
+
+  def update_attributes!(data)
+    update_attributes(data) or raise_record_invalid!
+  end
+
+  private
+
+  def raise_record_invalid!
+    raise(ActiveRecord::RecordInvalid.new(@model))
   end
 end

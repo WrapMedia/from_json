@@ -185,20 +185,54 @@ describe JsonForm::Form do
   end
 
   describe "#update_attributes" do
-    before do
-      build :leader_form
-      employee_form_class.class_eval do
-        attributes :name, :monthly_pay
-      end
+    def perform_valid
       leader_form.update_attributes(name: 'new name')
     end
 
-    it "assigns attributes to object" do
-      expect(leader.name).to eq('new name')
+    def perform_invalid
+      leader_form.update_attributes(name: nil)
     end
 
-    it "saves the object" do
-      expect(leader.reload.name).to eq('new name')
+    it_behaves_like 'saveable'
+  end
+
+  describe "#save" do
+    def perform_valid
+      leader_form.attributes = {name: 'new name'}
+      leader_form.save
     end
+
+    def perform_invalid
+      leader_form.attributes = {name: nil}
+      leader_form.save
+    end
+
+    it_behaves_like 'saveable'
+  end
+
+  describe "#update_attributes!" do
+    def perform_valid
+      leader_form.update_attributes!(name: 'new name')
+    end
+
+    def perform_invalid
+      leader_form.update_attributes!(name: nil)
+    end
+
+    it_behaves_like 'saveable!'
+  end
+
+  describe "#save!" do
+    def perform_valid
+      leader_form.attributes = {name: 'new name'}
+      leader_form.save!
+    end
+
+    def perform_invalid
+      leader_form.attributes = {name: nil}
+      leader_form.save!
+    end
+
+    it_behaves_like 'saveable!'
   end
 end
