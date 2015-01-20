@@ -37,12 +37,14 @@ class JsonForm::Form
     end
   end
 
-  def save(options = {})
-    @model.save(options)
+  def save
+    save_model.tap do |result|
+      after_save if result
+    end
   end
 
   def save!
-    @model.save or raise_record_invalid!
+    save or raise_record_invalid!
   end
 
   def update_attributes(data)
@@ -55,6 +57,13 @@ class JsonForm::Form
   end
 
   private
+
+  def after_save
+  end
+
+  def save_model
+    @model.save
+  end
 
   def raise_record_invalid!
     raise(ActiveRecord::RecordInvalid.new(@model))
