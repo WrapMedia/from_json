@@ -22,6 +22,8 @@ class JsonForm::Form
     self.associations = associations.merge(name => association_class.new(name, form_class))
   end
 
+  attr_reader :model
+
   def initialize(model)
     @model = model
   end
