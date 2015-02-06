@@ -1,7 +1,7 @@
 class JsonForm::Association
-  attr_reader :name, :form_class
+  attr_reader :name, :form_class, :parent
 
-  def initialize(name, form_class)
-    @name, @form_class, @options = name, form_class
+  def initialize(name, parent, form_class, form_options)
+    @name, @form_class, @parent, @form_options = name, form_class, parent, form_options
   end
 end

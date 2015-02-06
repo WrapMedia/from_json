@@ -24,9 +24,8 @@ describe JsonForm::Form do
       end
 
       expect(employee_form_class.associations.keys).to eq([:employees, :tasks])
-      expect(employee_form_class.associations[:tasks]).to be_a(JsonForm::EmbedsManyAssociation)
-      expect(employee_form_class.associations.values.map(&:name)).to eq([:employees, :tasks])
-      expect(employee_form_class.associations.values.map(&:form_class)).to eq([employee_form_class, task_form_class])
+      expect(employee_form_class.associations[:tasks]).to eq([JsonForm::EmbedsManyAssociation, task_form_class])
+      expect(employee_form_class.associations[:employees]).to eq([JsonForm::EmbedsManyAssociation, employee_form_class])
     end
 
     it "adds association with inline form" do
@@ -36,7 +35,7 @@ describe JsonForm::Form do
         end
       end
 
-      form_class = employee_form_class.associations[:employees].form_class
+      form_class = employee_form_class.associations[:employees][1]
       expect(form_class.ancestors[1]).to eq(JsonForm::Form)
       expect(form_class.attributes).to eq([:name])
     end
@@ -54,9 +53,7 @@ describe JsonForm::Form do
 
       expect(employee_form_class.associations.size).to eq(2)
       expect(employee_form_class.associations.keys).to eq([:employee, :task])
-      expect(employee_form_class.associations[:task]).to be_a(JsonForm::EmbedsOneAssociation)
-      expect(employee_form_class.associations.values.map(&:name)).to eq([:employee, :task])
-      expect(employee_form_class.associations.values.map(&:form_class)).to eq([employee_form_class, task_form_class])
+      expect(employee_form_class.associations[:task]).to eq([JsonForm::EmbedsOneAssociation, task_form_class])
     end
   end
 
@@ -98,6 +95,11 @@ describe JsonForm::Form do
         employee_form_class.class_eval do
           attributes :name
           embeds_many :employees, self
+
+          def attributes=(*args)
+            super
+            @model.name << @options[:name_suffix].to_s
+          end
         end
       end
 
@@ -120,13 +122,34 @@ describe JsonForm::Form do
         expect(leader.employees.size).to eq(1)
         expect(leader.employees[0].name).to eq('new name')
       end
+
+      it "deletes old objects" do
+        build :employee, :employee2
+        leader_form.attributes = {employees: [{id: employee2.id}]}
+
+        expect(leader.employees[0]).to be_marked_for_destruction
+        expect(leader.employees[1]).not_to be_marked_for_destruction
+      end
+
+      it "skips if data is nil" do
+        build :employee
+        leader_form.attributes = {employees: nil}
+        expect(leader.employees).to eq([employee])
+      end
+
+      it "passes options to child forms" do
+        leader_form = employee_form_class.new(leader, name_suffix: ' the great')
+        leader_form.attributes = {employees: [{name: 'new name'}]}
+        expect(leader.employees[0].name).to eq('new name the great')
+      end
     end
 
-    context "embeds many association with another form" do
+    context "embeds many association with embeded form" do
       before do
         employee_form_class.class_eval do
-          attributes :name
-          embeds_many :employees, self
+          embeds_many :employees do
+            attributes :name
+          end
         end
       end
 
@@ -156,6 +179,11 @@ describe JsonForm::Form do
         task_form_class = build(:task_form_class)
         task_form_class.class_eval do
           attributes :title
+
+          def attributes=(*args)
+            super
+            @model.title << @options[:suffix].to_s
+          end
         end
         employee_form_class.class_eval do
           embeds_one :task, task_form_class
@@ -173,13 +201,48 @@ describe JsonForm::Form do
         leader_form.attributes = {task: {id: 12, title: 'new task'}}
         expect(leader.task.id).to eq(12)
       end
+      it "assigns object that already has been created" do
+        build :do_laundry
+        leader_form.update_attributes!(task: {id: do_laundry.id, title: 'new task'})
+        expect(leader.task).to eq(do_laundry)
+        expect(leader.task.title).to eq('new task')
+        expect(Task.count).to eq(1)
+      end
 
-      it "assigns properties to object" do
-        build :task
-        leader_form.attributes = {task: {title: 'new name'}}
+      it "changes what task is assigned" do
+        build :task, :do_laundry
+        leader_form.attributes = {task: {id: do_laundry.id}}
+        expect(leader.task).to eq(do_laundry)
+      end
 
-        expect(leader.task).to eq(task)
-        expect(leader.task.title).to eq('new name')
+      it "passes options to child forms" do
+        leader_form = employee_form_class.new(leader, suffix: ' the great')
+        leader_form.attributes = {task: {title: 'new title'}}
+        expect(leader.task.title).to eq('new title the great')
+      end
+    end
+
+    context "custom association" do
+      it "calls after child built" do
+        assoc_class = Class.new(JsonForm::EmbedsManyAssociation) do
+          class_attribute :calls
+          self.calls = []
+
+          private
+
+          def child_built(child, child_data, position)
+            self.class.calls += [[child, child_data, position]]
+          end
+        end
+
+        employee_form_class.class_eval do
+          associate assoc_class, :employees
+        end
+
+        build :employee, :employee2
+
+        leader_form.attributes = {employees: [{id: employee.id}, {id: employee2.id}]}
+        expect(assoc_class.calls).to eq([[employee, {id: employee.id}, 0], [employee2, {id: employee2.id}, 1]])
       end
     end
   end

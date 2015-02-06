@@ -19,20 +19,22 @@ class JsonForm::Form
 
   def self.associate(association_class, name, form_class = JsonForm::Form, &block)
     form_class = Class.new(form_class, &block) if block
-    self.associations = associations.merge(name => association_class.new(name, form_class))
+    self.associations = associations.merge(name => [association_class, form_class])
   end
 
-  attr_reader :model
+  attr_reader :model, :options
 
-  def initialize(model)
+  def initialize(model, options = {})
     @model = model
+    @options = options
   end
 
   def attributes=(data)
     data.each do |attr, value|
       attr = attr.to_s.underscore.to_sym
       if associations.key?(attr)
-        associations[attr].assign(@model, value)
+        association_class, form_class = associations[attr]
+        association_class.new(attr, @model, form_class, @options).assign(value)
       elsif assigned_attributes.include?(attr)
         @model.send("#{attr}=", value)
       end

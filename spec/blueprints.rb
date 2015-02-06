@@ -1,6 +1,7 @@
 factory(Employee) do
   blueprint :leader, name: 'Leader'
   blueprint :employee, name: 'Employee', leader: leader
+  blueprint :employee2, name: 'Employee 2', leader: leader
 end
 
 factory(Task) do
