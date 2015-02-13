@@ -221,30 +221,6 @@ describe JsonForm::Form do
         expect(leader.task.title).to eq('new title the great')
       end
     end
-
-    context "custom association" do
-      it "calls after child built" do
-        assoc_class = Class.new(JsonForm::EmbedsManyAssociation) do
-          class_attribute :calls
-          self.calls = []
-
-          private
-
-          def child_built(child, child_data, position)
-            self.class.calls += [[child, child_data, position]]
-          end
-        end
-
-        employee_form_class.class_eval do
-          associate assoc_class, :employees
-        end
-
-        build :employee, :employee2
-
-        leader_form.attributes = {employees: [{id: employee.id}, {id: employee2.id}]}
-        expect(assoc_class.calls).to eq([[employee, {id: employee.id}, 0], [employee2, {id: employee2.id}, 1]])
-      end
-    end
   end
 
   describe "#update_attributes" do

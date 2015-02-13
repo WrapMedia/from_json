@@ -11,11 +11,14 @@ class JsonForm::EmbedsManyAssociation < JsonForm::Association
   def assign_data(data)
     data.map.with_index do |child_data, position|
       child = find_or_build_child(child_data)
-      form = @form_class.new(child, @form_options)
-      form.attributes = child_data
-      child_built(child, child_data, position)
-      form
+      assign_form(child, child_data, position)
     end
+  end
+
+  def assign_form(child, data, _)
+    form = @form_class.new(child, @form_options)
+    form.attributes = data
+    form
   end
 
   def association
@@ -42,8 +45,5 @@ class JsonForm::EmbedsManyAssociation < JsonForm::Association
 
   def child_build_data(child_data)
     {id: child_data[:id]}
-  end
-
-  def child_built(child, child_data, position)
   end
 end
