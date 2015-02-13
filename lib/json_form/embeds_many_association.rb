@@ -1,8 +1,9 @@
 class JsonForm::EmbedsManyAssociation < JsonForm::Association
   def assign(data)
     return if data.nil?
-    children_ids = assign_data(data)
-    delete_children(children_ids)
+    children_forms = assign_data(data)
+    delete_children(children_forms.map { |form| form.model.id })
+    children_forms
   end
 
   private
@@ -10,9 +11,10 @@ class JsonForm::EmbedsManyAssociation < JsonForm::Association
   def assign_data(data)
     data.map.with_index do |child_data, position|
       child = find_or_build_child(child_data)
-      @form_class.new(child, @form_options).attributes = child_data
+      form = @form_class.new(child, @form_options)
+      form.attributes = child_data
       child_built(child, child_data, position)
-      child.id
+      form
     end
   end
 

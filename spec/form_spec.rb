@@ -248,25 +248,16 @@ describe JsonForm::Form do
   end
 
   describe "#update_attributes" do
-    def perform_valid
-      leader_form.update_attributes(name: 'new name')
-    end
-
-    def perform_invalid
-      leader_form.update_attributes(name: nil)
+    def perform(attributes)
+      leader_form.update_attributes(attributes)
     end
 
     it_behaves_like 'saveable'
   end
 
   describe "#save" do
-    def perform_valid
-      leader_form.attributes = {name: 'new name'}
-      leader_form.save
-    end
-
-    def perform_invalid
-      leader_form.attributes = {name: nil}
+    def perform(attributes)
+      leader_form.attributes = attributes
       leader_form.save
     end
 
@@ -274,25 +265,16 @@ describe JsonForm::Form do
   end
 
   describe "#update_attributes!", raise: true do
-    def perform_valid
-      leader_form.update_attributes!(name: 'new name')
-    end
-
-    def perform_invalid
-      leader_form.update_attributes!(name: nil)
+    def perform(attributes)
+      leader_form.update_attributes!(attributes)
     end
 
     it_behaves_like 'saveable'
   end
 
   describe "#save!", raise: true do
-    def perform_valid
-      leader_form.attributes = {name: 'new name'}
-      leader_form.save!
-    end
-
-    def perform_invalid
-      leader_form.attributes = {name: nil}
+    def perform(attributes)
+      leader_form.attributes = attributes
       leader_form.save!
     end
 

@@ -1,4 +1,7 @@
 class JsonForm::Form
+  extend ActiveModel::Callbacks
+  define_model_callbacks :save
+
   class_attribute :assigned_attributes
   self.assigned_attributes = []
 
@@ -27,6 +30,7 @@ class JsonForm::Form
   def initialize(model, options = {})
     @model = model
     @options = options
+    @children_forms = []
   end
 
   def attributes=(data)
@@ -34,21 +38,19 @@ class JsonForm::Form
       attr = attr.to_s.underscore.to_sym
       if associations.key?(attr)
         association_class, form_class = associations[attr]
-        association_class.new(attr, @model, form_class, @options).assign(value)
+        @children_forms.push *association_class.new(attr, @model, form_class, @options).assign(value)
       elsif assigned_attributes.include?(attr)
         @model.send("#{attr}=", value)
       end
     end
   end
 
-  def save
-    save_model.tap do |result|
-      after_save if result
-    end
+  def save(raise: false)
+    ActiveRecord::Base.transaction { persist(raise: raise) }
   end
 
   def save!
-    save or raise_record_invalid!
+    save raise: true
   end
 
   def update_attributes(data)
@@ -57,19 +59,20 @@ class JsonForm::Form
   end
 
   def update_attributes!(data)
-    update_attributes(data) or raise_record_invalid!
+    self.attributes = data
+    save!
   end
 
-  private
+  protected
 
-  def after_save
-  end
-
-  def save_model
-    @model.save
-  end
-
-  def raise_record_invalid!
-    raise(ActiveRecord::RecordInvalid.new(@model))
+  def persist(raise: false)
+    run_callbacks :save do
+      @children_forms.each { |children_form| children_form.persist(raise: raise) }
+      if raise
+        @model.save!
+      else
+        @model.save or raise ActiveRecord::Rollback
+      end
+    end
   end
 end
