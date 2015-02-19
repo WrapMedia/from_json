@@ -197,6 +197,16 @@ describe JsonForm::Form do
         expect(leader.task.title).to eq('new task')
       end
 
+      it "removes associations" do
+        leader_form.attributes = {task: {title: 'new task'}}
+
+        expect(leader.task).to be_a(Task)
+        expect(leader.task.title).to eq('new task')
+
+        leader_form.attributes = {task: nil}
+        expect(leader.task).to eq(nil)
+      end
+
       it "assigns id to new object" do
         leader_form.attributes = {task: {id: 12, title: 'new task'}}
         expect(leader.task.id).to eq(12)
