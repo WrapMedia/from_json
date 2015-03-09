@@ -2,11 +2,8 @@ class JsonForm::EmbedsOneAssociation < JsonForm::Association
   def assign(data)
     if data
       child_class = @parent.class.reflect_on_association(@name).klass
-      child = child_class.find_or_initialize_by(id: data[:id])
-      @parent.send("#{@name}=", child)
-
-      form = @form_class.new(child, @form_options)
-      form.attributes = data
+      form = @form_class.from_attributes(data, @form_options.merge(base: child_class))
+      @parent.send("#{@name}=", form.model)
       form
     else
       @parent.send("#{@name}=", nil)

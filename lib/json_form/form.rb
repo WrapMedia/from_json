@@ -12,33 +12,54 @@ class JsonForm::Form
   class_attribute :associations
   self.associations = {}
 
-  def self.embeds_many(*args, &block)
-    associate JsonForm::EmbedsManyAssociation, *args, &block
+  def self.embeds_many(*args, **options, &block)
+    associate JsonForm::EmbedsManyAssociation, *args, **options, &block
   end
 
-  def self.embeds_one(*args, &block)
-    associate JsonForm::EmbedsOneAssociation, *args, &block
+  def self.embeds_one(*args, **options, &block)
+    associate JsonForm::EmbedsOneAssociation, *args, **options, &block
   end
 
-  def self.associate(association_class, name, form_class = JsonForm::Form, &block)
+  def self.associate(association_class, name, form_class = JsonForm::Form, **options, &block)
     form_class = Class.new(form_class, &block) if block
-    self.associations = associations.merge(name => [association_class, form_class])
+    reflection = JsonForm::AssociationReflection.new(association_class, form_class, **options)
+    self.associations = associations.merge(name => reflection)
+  end
+
+  def self.base(_)
+    to_s.sub(/Form\z/, '').constantize
+  end
+
+  def self.form_for(_)
+    self
+  end
+
+  def self.from_attributes(data = {}, options = {})
+    base_class = options.delete(:base) || base(data)
+    model = base_class.find_or_initialize_by(id: data[:id])
+    form_for(data).new(model, options).tap { |form| form.attributes = data }
   end
 
   attr_reader :model, :options
 
-  def initialize(model, options = {})
+  def initialize(model, **options)
     @model = model
     @options = options
     @children_forms = []
+    @parent_forms = []
   end
 
   def attributes=(data)
     data.each do |attr, value|
       attr = attr.to_s.underscore.to_sym
       if associations.key?(attr)
-        association_class, form_class = associations[attr]
-        @children_forms.push *association_class.new(attr, @model, form_class, @options).assign(value)
+        reflection = associations[attr]
+        forms = reflection.build(attr, @model, @options).assign(value)
+        if reflection.options[:parent]
+          @parent_forms.push *forms
+        else
+          @children_forms.push *forms
+        end
       elsif assigned_attributes.include?(attr)
         @model.send("#{attr}=", value)
       end
@@ -65,14 +86,19 @@ class JsonForm::Form
 
   protected
 
+  def save_forms(forms, raise: false)
+    forms.each { |children_form| children_form.persist(raise: raise) }
+  end
+
   def persist(raise: false)
     run_callbacks :save do
-      @children_forms.each { |children_form| children_form.persist(raise: raise) }
+      save_forms @parent_forms, raise: raise
       if raise
         @model.save!
       else
         @model.save or raise ActiveRecord::Rollback
       end
+      save_forms @children_forms, raise: raise
     end
   end
 end

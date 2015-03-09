@@ -10,11 +10,11 @@ factory(Task) do
 end
 
 blueprint :employee_form_class do
-  Class.new(JsonForm::Form)
+  stub_const('EmployeeForm', Class.new(JsonForm::Form))
 end
 
 blueprint :task_form_class do
-  Class.new(JsonForm::Form)
+  stub_const('TaskForm', Class.new(JsonForm::Form))
 end
 
 depends_on(:employee_form_class, :leader).blueprint :leader_form do
