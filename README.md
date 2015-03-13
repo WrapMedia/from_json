@@ -55,8 +55,10 @@ form.save! # Persists changes from params[:model]
 ```
 
 The logic behind auto initialization is:
+
 1. Find model within database by `data[:id]` if it exists
 2. Initialize new model instance with that id if it doesn't
+
 In fact similar logic is used for associations too.
 
 ### Customizing behavior
@@ -152,7 +154,7 @@ end
 EmployeeForm.new(@employee).save! # Will call @employee.leader.save! then @employee.save! then @employee.task.save!
 ```
 
-## Passing options
+## Form options
 
 You can pass options when initializing form:
 
