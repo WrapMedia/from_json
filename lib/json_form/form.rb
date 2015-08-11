@@ -36,7 +36,11 @@ class JsonForm::Form
 
   def self.from_attributes(data = {}, options = {})
     base_class = options.delete(:base) || base(data)
-    model = base_class.find_or_initialize_by(id: data[:id])
+    if data[:id]
+      model = base_class.find_or_initialize_by(id: data[:id])
+    else
+      model = base_class.new
+    end
     form_for(data).new(model, options).tap { |form| form.attributes = data }
   end
 
