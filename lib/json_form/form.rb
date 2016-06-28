@@ -1,6 +1,6 @@
 class JsonForm::Form
   extend ActiveModel::Callbacks
-  define_model_callbacks :save
+  define_model_callbacks :save, :commit
 
   class_attribute :assigned_attributes
   self.assigned_attributes = []
@@ -71,7 +71,11 @@ class JsonForm::Form
   end
 
   def save(raise: false)
-    ActiveRecord::Base.transaction { persist(raise: raise) }
+    ActiveRecord::Base.transaction do
+      run_callbacks :commit do
+        persist(raise: raise)
+      end
+    end
   end
 
   def save!
